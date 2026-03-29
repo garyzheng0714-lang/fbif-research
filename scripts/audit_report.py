@@ -61,6 +61,21 @@ def audit_html(html_path: Path) -> dict:
         if f'id="{elem_id}"' not in html:
             issues.append(f"缺少关键元素: {label} (#{elem_id})")
 
+    # 1b. AI摘要检测 — 正文不应包含agent自己写的概括
+    summary_patterns = [
+        r'(?:^|\n)\s*(?:概述|摘要|要点|核心内容|文章概要|页面概述|内容摘要)',
+        r'(?:^|\n)\s*(?:本文介绍|本文分析|本文总结|本文概述|此页面)',
+        r'(?:^|\n)\s*(?:Key takeaway|Summary|Overview|This article)',
+    ]
+    summary_count = 0
+    for section in re.findall(r'class="source-content-zh[^"]*">(.*?)</div>', html, re.DOTALL):
+        for pattern in summary_patterns:
+            matches = re.findall(pattern, section, re.IGNORECASE)
+            summary_count += len(matches)
+    if summary_count > 0:
+        issues.append(f"发现AI摘要: {summary_count}处疑似agent自己写的概述/摘要（应该只有原文翻译，不应有概括性文字）")
+    stats['summary_detections'] = summary_count
+
     # 2. 标签泄露检测
     # 检查正文区域是否有被转义的HTML标签文字（说明转义过度）
     # 和没转义的原始标签（说明转义不足）
