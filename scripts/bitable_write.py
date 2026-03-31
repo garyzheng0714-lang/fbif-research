@@ -100,8 +100,20 @@ def main():
     brand = manifest.get("brand", {})
     total_words, zh_words = count_words(root)
     source_count = count_sources(root)
-    module_count = len([k for k, v in manifest.get("modules", {}).items()
-                       if v.get("status") in ("done", "in_progress")])
+    # Count modules from source-inventory.json (more reliable than manifest.modules)
+    inv_path = root / "source-inventory.json"
+    module_set = set()
+    if inv_path.exists():
+        try:
+            inv = json.loads(inv_path.read_text())
+            inv_list = inv if isinstance(inv, list) else inv.get("sources", [])
+            for item in inv_list:
+                mod = item.get("module", "")
+                if mod:
+                    module_set.add(mod)
+        except Exception:
+            pass
+    module_count = len(module_set) if module_set else len(manifest.get("modules", {}))
     report_url = manifest.get("report_url", "")
     download_url = manifest.get("download_url", "")
 

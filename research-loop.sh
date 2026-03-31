@@ -26,7 +26,6 @@ LOG_DIR="$SKILL_DIR/logs"
 LOCK_DIR="$SKILL_DIR/.locks"
 MAX_TIMEOUT=5400   # 90 分钟硬超时
 MAX_TURNS=300      # claude max turns
-MAX_RETRIES=1      # 单品牌最大重试次数
 DRY_RUN=false
 LIMIT=0            # 0=不限制
 

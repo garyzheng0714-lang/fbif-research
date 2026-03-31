@@ -62,6 +62,14 @@ def main():
 
     url = f'{base_url}/{brand_slug}/index.html' if base_url else f'https://{bucket_name}.{endpoint.replace("https://","")}/{oss_key}'
     print(f'Uploaded: {url}')
+
+    # Write report_url back to manifest.json so validate_completion and bitable_write can find it
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text())
+        manifest['report_url'] = url
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
+        print(f'Updated manifest.json with report_url')
+
     return url
 
 if __name__ == '__main__':

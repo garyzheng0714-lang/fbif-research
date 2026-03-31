@@ -147,7 +147,7 @@ def audit_html(html_path: Path) -> dict:
 
     # 8. ZH/EN标题属性检查
     title_attrs = re.findall(r'data-title-zh="([^"]*)"', html)
-    empty_zh_titles = sum(1 for t in title_attrs if not t or t == t)  # placeholder check
+    empty_zh_titles = sum(1 for t in title_attrs if not t.strip())  # count truly empty titles
     stats['zh_title_count'] = len(title_attrs)
 
     # 9. 文件大小

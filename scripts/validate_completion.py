@@ -62,10 +62,10 @@ def main():
         if zh < 3000:
             errors.append(f"中文字数过少: {zh:,} (最少3,000)")
 
-    # 4. sources/ 目录有文件
+    # 4. sources/ 目录有文件（支持 slug 命名和 src-*.md 两种格式）
     sources_dir = root / "sources"
     if sources_dir.exists():
-        src_files = list(sources_dir.glob("src-*.md"))
+        src_files = list(sources_dir.glob("*.md"))
         if len(src_files) < 5:
             errors.append(f"来源文件过少: {len(src_files)} (最少5)")
     else:
