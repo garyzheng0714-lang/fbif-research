@@ -2,8 +2,10 @@
 # research-loop.sh — 批量品牌调研主循环
 #
 # 用法：
-#   bash research-loop.sh              # 从待调研表读取，逐个调研
+#   bash research-loop.sh              # 调研全部待调研品牌
+#   bash research-loop.sh --limit 10   # 只调研前10个
 #   bash research-loop.sh --dry-run    # 只读取不执行
+#   bash research-loop.sh --dry-run --limit 3  # 预览前3个
 #
 # 加固措施（针对 Codex 审查反馈）：
 #   1. 每个品牌独立 claude 会话（上下文隔离）
@@ -26,8 +28,18 @@ MAX_TIMEOUT=5400   # 90 分钟硬超时
 MAX_TURNS=300      # claude max turns
 MAX_RETRIES=1      # 单品牌最大重试次数
 DRY_RUN=false
+LIMIT=0            # 0=不限制
 
-[ "${1:-}" = "--dry-run" ] && DRY_RUN=true
+# 解析参数
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=true ;;
+    --limit) LIMIT="$2"; shift ;;
+    --limit=*) LIMIT="${1#--limit=}" ;;
+    *) echo "未知参数: $1"; exit 1 ;;
+  esac
+  shift
+done
 
 mkdir -p "$OUTPUT_BASE" "$LOG_DIR" "$LOCK_DIR"
 
@@ -62,9 +74,13 @@ trap cleanup_dry_run_locks EXIT
 
 # --- 主循环 ---
 ROUND=0
+COMPLETED=0
+if [ "$LIMIT" -gt 0 ] 2>/dev/null; then
+  log "限制调研数量: $LIMIT"
+fi
 while true; do
   ROUND=$((ROUND + 1))
-  log "========== 第 $ROUND 轮 =========="
+  log "========== 第 $ROUND 轮 $([ "$LIMIT" -gt 0 ] 2>/dev/null && echo "(已完成 $COMPLETED/$LIMIT)") =========="
 
   # 1. 读取下一个待调研品牌（排除已有锁文件的）
   EXCLUDE_ARGS=""
@@ -170,8 +186,15 @@ while true; do
   # 9. 清除锁文件（成功完成）
   rm -f "$LOCK_FILE"
   log_brand "调研完成并写回成功"
+  COMPLETED=$((COMPLETED + 1))
 
-  # 10. 间隔
+  # 10. 检查 limit
+  if [ "$LIMIT" -gt 0 ] 2>/dev/null && [ "$COMPLETED" -ge "$LIMIT" ]; then
+    log "已达到限制数量 ($COMPLETED/$LIMIT)，停止"
+    break
+  fi
+
+  # 11. 间隔
   log "等待 30 秒后继续下一个..."
   sleep 30
 done
