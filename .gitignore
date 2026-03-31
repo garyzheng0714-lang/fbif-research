@@ -1,2 +1,8 @@
 oss-config.json
+bitable-config.json
 .gstack/
+.context/
+.locks/
+logs/
+outputs/
+.batch-pid
